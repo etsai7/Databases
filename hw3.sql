@@ -15,7 +15,7 @@ DROP PROCEDURE IF EXISTS ShowPercentages $$
 CREATE PROCEDURE ShowPercentages(IN id INTEGER)
     BEGIN
         IF EXISTS (SELECT ssn FROM Rawscores WHERE ssn = id) THEN 
-            SELECT R1.SSN AS SSN, R1.FName AS 'FName', R1.LName AS LName,
+            SELECT R1.SSN AS SSN, R1.FName AS 'FName', R1.Section AS 'Section', R1.LName AS LName,
             (R1.HW1*(1/R2.HW1)*100) AS 'HW1%',
             (R1.HW2a * (1/R2.HW2a) *100) AS 'HW2a%', (R1.HW2b * (1/R2.HW2b)*100) AS 'HW2b%',
             (R1.Midterm * (1/R2.Midterm)*100) AS 'Midterm%',
@@ -52,7 +52,7 @@ DROP PROCEDURE IF EXISTS AllPercentages $$
 CREATE PROCEDURE AllPercentages(IN pass VARCHAR(15))
     BEGIN
         IF EXISTS (SELECT CurPasswords FROM Passwords WHERE pass = CurPasswords) THEN 
-            SELECT R1.SSN AS SSN, R1.FName AS 'FName', R1.LName AS LName,
+            SELECT R1.SSN AS SSN, R1.FName AS 'FName', R1.LName AS LName, R1.Section AS 'Section',
             (R1.HW1*(1/R2.HW1)*100) AS 'HW1%',
             (R1.HW2a * (1/R2.HW2a) *100) AS 'HW2a%', (R1.HW2b * (1/R2.HW2b)*100) AS 'HW2b%',
             (R1.Midterm * (1/R2.Midterm)*100) AS 'Midterm%',
