@@ -1,0 +1,1385 @@
+MySQL [cs41517_etsai7_db]> -- Comments
+MySQL [cs41517_etsai7_db]> /*
+   /*>     15. I assumed highest grade in the course meant A+
+   /*>     39. Need to uncomment out UPDATE to run it. 
+   /*> */
+MySQL [cs41517_etsai7_db]> 
+MySQL [cs41517_etsai7_db]> -- 1. List the name of dorms only housing female students 
+MySQL [cs41517_etsai7_db]> -- Working
+MySQL [cs41517_etsai7_db]> SELECT dorm_name FROM Dorm WHERE gender = "F";
++----------------------+
+| dorm_name            |
++----------------------+
+| Anonymous Donor Hall |
++----------------------+
+1 row in set (0.00 sec)
+
+MySQL [cs41517_etsai7_db]> 
+MySQL [cs41517_etsai7_db]> -- 2. List the student name and major name of all students who are 
+MySQL [cs41517_etsai7_db]> --  enrolled in a course taught by Russell Taylor.
+MySQL [cs41517_etsai7_db]> -- Working
+MySQL [cs41517_etsai7_db]> SELECT DISTINCT(S.Lname), S.Fname, S.Major 
+    -> FROM Student as S, Course as C, Enrolled_in as E, Faculty as F
+    -> WHERE S.StuID = E.StuID AND E.CID = C.CID AND C.Instructor = F.FacID
+    -> AND F.Lname = "Taylor" AND F.Fname = "Russell";
++---------+---------+-------+
+| Lname   | Fname   | Major |
++---------+---------+-------+
+| Kumar   | Dinesh  |   600 |
+| Norris  | Charles |   600 |
+| Andreou | George  |   520 |
+| Pang    | Eric    |   520 |
++---------+---------+-------+
+4 rows in set (0.01 sec)
+
+MySQL [cs41517_etsai7_db]> 
+MySQL [cs41517_etsai7_db]> -- 3. List the name, age and sex of all students with no roommates
+MySQL [cs41517_etsai7_db]> -- Working
+MySQL [cs41517_etsai7_db]> SELECT DISTINCT(S.Lname), S.Fname, S.Sex
+    -> FROM Student as S, Lives_in as L,
+    -> (
+    ->     SELECT L.dormid, COUNT(L.room_number) as no, L.room_number, L.stuid as LSI
+    ->     FROM Lives_in as L
+    ->     GROUP BY L.dormid, L.room_number
+    -> ) as t
+    -> WHERE t.LSI = S.StuID AND t.no < 2;
++----------+---------+------+
+| Lname    | Fname   | Sex  |
++----------+---------+------+
+| Kumar    | Dinesh  | M    |
+| Apap     | Lisa    | F    |
+| Nelson   | Jandy   | F    |
+| Tai      | Eric    | M    |
+| Adams    | David   | M    |
+| Norris   | Charles | M    |
+| Schwartz | Mark    | M    |
+| Wilson   | Bruce   | M    |
+| Leighton | Michael | M    |
+| Woods    | Michael | M    |
+| Prater   | Stacy   | F    |
+| Brody    | Paul    | M    |
+| Rugh     | Eric    | M    |
+| Han      | Jun     | M    |
+| Cheng    | Lisa    | F    |
+| Simms    | William | M    |
+| Epp      | Eric    | M    |
++----------+---------+------+
+17 rows in set (0.01 sec)
+
+MySQL [cs41517_etsai7_db]> 
+MySQL [cs41517_etsai7_db]> -- 4. List the student names and major names of all students who are 
+MySQL [cs41517_etsai7_db]> --   not enrolled in any courses from his/her major
+MySQL [cs41517_etsai7_db]> -- Working - Check
+MySQL [cs41517_etsai7_db]> SELECT DISTINCT(Lname), Fname, Major 
+    -> FROM Student as S, Enrolled_in as E, Course as C
+    -> WHERE (S.StuID) NOT IN 
+    -> (SELECT DISTINCT(S.StuID)
+    -> FROM Student as S, Enrolled_in as E, Course as C
+    -> WHERE S.StuID = E.StuID AND E.CID = C.CID AND S.Major = C.CID
+    -> );
++----------+---------+-------+
+| Lname    | Fname   | Major |
++----------+---------+-------+
+| Smith    | Linda   |   600 |
+| Kim      | Tracy   |   600 |
+| Jones    | Shiela  |   600 |
+| Kumar    | Dinesh  |   600 |
+| Gompers  | Paul    |   600 |
+| Schultz  | Andy    |   600 |
+| Apap     | Lisa    |   600 |
+| Nelson   | Jandy   |   600 |
+| Tai      | Eric    |   600 |
+| Lee      | Derek   |   600 |
+| Adams    | David   |   600 |
+| Davis    | Steven  |   600 |
+| Norris   | Charles |   600 |
+| Lee      | Susan   |   600 |
+| Schwartz | Mark    |   600 |
+| Wilson   | Bruce   |   600 |
+| Leighton | Michael |   600 |
+| Pang     | Arthur  |   600 |
+| Thornton | Ian     |   520 |
+| Andreou  | George  |   520 |
+| Woods    | Michael |   540 |
+| Shieber  | David   |   520 |
+| Prater   | Stacy   |   540 |
+| Goldman  | Mark    |   520 |
+| Pang     | Eric    |   520 |
+| Brody    | Paul    |   520 |
+| Rugh     | Eric    |   550 |
+| Han      | Jun     |   100 |
+| Cheng    | Lisa    |   550 |
+| Smith    | Sarah   |   550 |
+| Brown    | Eric    |   550 |
+| Simms    | William |   550 |
+| Epp      | Eric    |    50 |
+| Schmidt  | Sarah   |    50 |
++----------+---------+-------+
+34 rows in set (0.38 sec)
+
+MySQL [cs41517_etsai7_db]> 
+MySQL [cs41517_etsai7_db]> -- 5. List the names of activities with the most faculty participation
+MySQL [cs41517_etsai7_db]> -- Working
+MySQL [cs41517_etsai7_db]> SELECT fs.ActivityName
+    -> FROM (
+    ->     SELECT F.FacID as FI, A.activity_name as ActivityName
+    ->     FROM Activity as A, Faculty_Participates_in as FP, Faculty as F
+    ->     WHERE A.actid = FP.actid AND FP.FacID = F.FacID
+    ->     ) as fs
+    ->     GROUP BY fs.ActivityName
+    ->     HAVING COUNT(fs.FI) = 
+    ->         (SELECT MAX(t.ct) 
+    ->             FROM
+    ->                 (
+    ->                     SELECT A.activity_name as AName, COUNT(F.FacID) as ct
+    ->                     FROM Activity as A, Faculty_Participates_in as FP, Faculty as F
+    ->                     WHERE A.actid = FP.actid AND FP.FacID = F.FacID
+    ->                     GROUP BY A.activity_name
+    ->                 ) as t
+    ->         );
++-------------------+
+| ActivityName      |
++-------------------+
+| Crossword Puzzles |
++-------------------+
+1 row in set (0.01 sec)
+
+MySQL [cs41517_etsai7_db]> 
+MySQL [cs41517_etsai7_db]> -- 7. List the student name and major name of the students who participate
+MySQL [cs41517_etsai7_db]> --  in at least 2 activities including either Mountain Climbing or Spelunking
+MySQL [cs41517_etsai7_db]> -- Working
+MySQL [cs41517_etsai7_db]> SELECT DISTINCT(S.Lname), S.Fname, S.Major 
+    -> FROM Participates_in as PI, Student as S
+    -> WHERE S.StuID IN (
+    ->     SELECT S.StuID as SI
+    ->     FROM Student as S, Activity as A, Participates_in as P
+    ->     WHERE S.StuID = P.StuID AND P.actID = A.actID 
+    ->                 AND (A.activity_name = "Mountain Climbing" OR A.activity_name = "Spelunking")   
+    ->     )
+    ->     AND S.StuID = PI.StuID 
+    -> GROUP BY S.StuID
+    -> HAVING COUNT(PI.actID) >= 2;
++----------+---------+-------+
+| Lname    | Fname   | Major |
++----------+---------+-------+
+| Smith    | Linda   |   600 |
+| Apap     | Lisa    |   600 |
+| Nelson   | Jandy   |   600 |
+| Norris   | Charles |   600 |
+| Wilson   | Bruce   |   600 |
+| Leighton | Michael |   600 |
+| Goldman  | Mark    |   520 |
++----------+---------+-------+
+7 rows in set (0.01 sec)
+
+MySQL [cs41517_etsai7_db]> 
+MySQL [cs41517_etsai7_db]> -- 8. List the student name and major name of the students who participate
+MySQL [cs41517_etsai7_db]> --  in at least 2 activities and never received a grade below B- in any 
+MySQL [cs41517_etsai7_db]> --  courses s/he is enrolled in
+MySQL [cs41517_etsai7_db]> -- Working 
+MySQL [cs41517_etsai7_db]> SELECT *
+    -> FROM Student as S
+    -> WHERE S.StuID IN
+    -> (SELECT t.SSI
+    ->     FROM
+    ->     (
+    ->         SELECT S.StuID as SSI, COUNT(P.StuID) as count
+    ->         FROM Student as S, Activity as A, Participates_in as P, Department as D
+    ->         WHERE S.StuID = P.StuID AND P.actID = A.actID AND S.Major = D.DNO
+    ->         GROUP BY S.StuID 
+    ->     ) as t
+    ->     WHERE t.count >= 2 
+    -> )
+    ->     AND S.StuID NOT IN (SELECT S.StuID as ss
+    ->                             FROM Student as S, Enrolled_in as EI, Gradeconversion as GC
+    ->                             WHERE S.StuID = EI.StuID AND EI.grade = GC.lettergrade
+    ->                                     AND GC.gradepoint < 2.7
+    ->                         );
++-------+---------+---------+------+------+-------+---------+-----------+
+| StuID | LName   | Fname   | Age  | Sex  | Major | Advisor | city_code |
++-------+---------+---------+------+------+-------+---------+-----------+
+|  1001 | Smith   | Linda   |   18 | F    |   600 |    1121 | BAL       |
+|  1008 | Nelson  | Jandy   |   20 | F    |   600 |    9172 | BAL       |
+|  1014 | Norris  | Charles |   18 | M    |   600 |    8741 | DAL       |
+|  1023 | Shieber | David   |   20 | M    |   520 |    8722 | NYC       |
+|  1030 | Cheng   | Lisa    |   21 | F    |   550 |    2311 | SFO       |
+|  1034 | Epp     | Eric    |   18 | M    |    50 |    5718 | BOS       |
++-------+---------+---------+------+------+-------+---------+-----------+
+6 rows in set (0.01 sec)
+
+MySQL [cs41517_etsai7_db]> 
+MySQL [cs41517_etsai7_db]> -- 10. Find the name of all faculty members whoe building is different from 
+MySQL [cs41517_etsai7_db]> --   his/her department's building. Report the faculty name, department name,
+MySQL [cs41517_etsai7_db]> --   faculty office building, and department building
+MySQL [cs41517_etsai7_db]> -- Should be Working
+MySQL [cs41517_etsai7_db]> SELECT F.Lname, F.Fname, D.Dname, F.Building, D.Building
+    -> FROM Faculty as F, Department as D, Member_of as M
+    -> WHERE F.FacID = M.FacID AND D.DNO = M.DNO AND F.Building != D.Building;
++-------------+-----------+-----------------------+----------+----------+
+| Lname       | Fname     | Dname                 | Building | Building |
++-------------+-----------+-----------------------+----------+----------+
+| Wolff       | Lawrence  | ECE                   | NEB      | Barton   |
+| Salzberg    | Steven    | Cognitive Science     | NEB      | Krieger  |
+| Naiman      | Daniel    | Mathematical Sciences | Krieger  | Maryland |
+| Scheinerman | Edward    | Mathematical Sciences | Krieger  | Maryland |
+| Priebe      | Carey     | Mathematical Sciences | Krieger  | Maryland |
+| Fill        | James     | Mathematical Sciences | Krieger  | Maryland |
+| Goldman     | Alan      | Mathematical Sciences | Krieger  | Maryland |
+| Cheng       | Cheng     | Mathematical Sciences | Krieger  | Maryland |
+| Han         | Shih-Ping | Mathematical Sciences | Krieger  | Maryland |
+| Jelinek     | Frederick | Computer Science      | Barton   | NEB      |
+| Jelinek     | Frederick | Cognitive Science     | Barton   | Krieger  |
+| James       | Lancelot  | Mathematical Sciences | Krieger  | Maryland |
+| Wierman     | John      | Mathematical Sciences | Krieger  | Maryland |
+| Cowen       | Lenore    | Mathematical Sciences | Krieger  | Maryland |
+| Brent       | Michael   | Computer Science      | Krieger  | NEB      |
+| Pang        | Jong-Shi  | Mathematical Sciences | Krieger  | Maryland |
+| Wu          | Colin     | Mathematical Sciences | Krieger  | Maryland |
+| Hall        | Leslie    | Mathematical Sciences | Krieger  | Maryland |
++-------------+-----------+-----------------------+----------+----------+
+18 rows in set (0.00 sec)
+
+MySQL [cs41517_etsai7_db]> 
+MySQL [cs41517_etsai7_db]> -- 12. List the dormname and student capacity for female dorms where there are
+MySQL [cs41517_etsai7_db]> --   no amenities
+MySQL [cs41517_etsai7_db]> -- Working, Empty Set
+MySQL [cs41517_etsai7_db]> SELECT D.dorm_name, D.student_capacity
+    -> FROM Dorm as D, Dorm_amenity as DA, Has_amenity as HA
+    -> WHERE D.gender = "F" AND D.dormid NOT IN (SELECT dormid FROM Has_amenity);
+Empty set (0.01 sec)
+
+MySQL [cs41517_etsai7_db]> 
+MySQL [cs41517_etsai7_db]> -- 13. List the dormid and student capacity for the dorm with the most amentiies.
+MySQL [cs41517_etsai7_db]> --   If there is a tie, list all tying dorms
+MySQL [cs41517_etsai7_db]> -- Working
+MySQL [cs41517_etsai7_db]> SELECT fs.DormID, fs.student_Capacity, COUNT(fs.ct)
+    -> FROM (
+    ->     SELECT D.dormid as DormID, D.student_capacity as student_Capacity, (HA.dormid) as ct
+    ->     FROM Dorm  as D, Dorm_amenity as DA, Has_amenity as HA
+    ->     WHERE D.dormid = HA.dormid AND DA.amenid = HA.amenid
+    ->     ) as fs
+    ->     GROUP BY fs.DormID
+    ->     HAVING COUNT(fs.ct) = 
+    ->         (SELECT MAX(t.ct) 
+    ->             FROM
+    ->                 (
+    ->                     SELECT D.dormid, COUNT(HA.dormid) as ct
+    ->                     FROM Dorm  as D, Dorm_amenity as DA, Has_amenity as HA
+    ->                     WHERE D.dormid = HA.dormid AND DA.amenid = HA.amenid
+    ->                     GROUP BY D.dormid
+    ->                 ) as t
+    ->         );
++--------+------------------+--------------+
+| DormID | student_Capacity | COUNT(fs.ct) |
++--------+------------------+--------------+
+|    160 |              400 |           12 |
++--------+------------------+--------------+
+1 row in set (0.00 sec)
+
+MySQL [cs41517_etsai7_db]> 
+MySQL [cs41517_etsai7_db]> /*SELECT a,b FROM table
+   /*> WHERE b = (SELECT MAX(b) FROM table)
+   /*> */
+MySQL [cs41517_etsai7_db]> 
+MySQL [cs41517_etsai7_db]> -- 14. List the student names, major name and advisor name of all students who have
+MySQL [cs41517_etsai7_db]> --   received an A+ in "Computer Vision"
+MySQL [cs41517_etsai7_db]> -- Working, Empty Set????
+MySQL [cs41517_etsai7_db]> SELECT S.Lname, S.Fname, S.Major, F.Lname, F.Fname
+    -> FROM Student as S, Faculty as F, Course as C, Enrolled_in as E
+    -> WHERE S.StuID = E.StuID AND E.CID = C.CID AND C.CName = "COMPUTER VISION"
+    -> AND E.Grade = "A+" AND F.FacID = S.Advisor;
+Empty set (0.00 sec)
+
+MySQL [cs41517_etsai7_db]> 
+MySQL [cs41517_etsai7_db]> -- 15. List the coursename, coursenumber, student name, major name and advisor name of
+MySQL [cs41517_etsai7_db]> --   the students who have achieved the highest grade in each course in the database. 
+MySQL [cs41517_etsai7_db]> --   If there is a tie, list all tying students
+MySQL [cs41517_etsai7_db]> -- Working Check
+MySQL [cs41517_etsai7_db]> SELECT C.CName, C.CID, S.Lname, S.Fname, S.Major, F.Lname, F.Fname
+    -> FROM Course as C, Student as S, Faculty as F, Enrolled_in as E
+    -> WHERE E.Grade = "A+" AND S.StuID = E.StuID AND C.CID = E.CID  AND S.Advisor = F.FacID;
++-------------------------+---------+---------+---------+-------+----------+----------+
+| CName                   | CID     | Lname   | Fname   | Major | Lname    | Fname    |
++-------------------------+---------+---------+---------+-------+----------+----------+
+| ALGORITHMS I            | 600.463 | Kumar   | Dinesh  |   600 | Kumar    | Subodh   |
+| DATABASE SYSTEMS        | 600.415 | Nelson  | Jandy   |   600 | Kosaraju | Rao      |
+| DATABASE SYSTEMS        | 600.315 | Norris  | Charles |   600 | Salzberg | Steven   |
+| DATA STRUCTURES in JAVA | 600.227 | Lee     | Susan   |   600 | Wolff    | Lawrence |
+| DATABASE SYSTEMS        | 600.315 | Rugh    | Eric    |   550 | Priebe   | Carey    |
+| DISTRIBUTED SYSTEMS     | 600.337 | Rugh    | Eric    |   550 | Priebe   | Carey    |
+| ALGORITHMS I            | 600.463 | Han     | Jun     |   100 | Priebe   | Carey    |
+| DISTRIBUTED SYSTEMS     | 600.437 | Smith   | Sarah   |   550 | Cowen    | Lenore   |
+| ECE LABORATORY          | 520.345 | Goldman | Mark    |   520 | Goutsias | John     |
++-------------------------+---------+---------+---------+-------+----------+----------+
+9 rows in set (0.01 sec)
+
+MySQL [cs41517_etsai7_db]> 
+MySQL [cs41517_etsai7_db]> /*
+   /*> SELECT EI.CID, MAX(GC.gradepoint)
+   /*> FROM Enrolled_in as EI, Gradeconversion as GC
+   /*> WHERE EI.Grade = GC.lettergrade
+   /*> GROUP BY EI.CID;
+   /*> 
+   /*> SELECT fs.ActivityName
+   /*> FROM (
+   /*>     SELECT F.FacID as FI, A.activity_name as ActivityName
+   /*>     FROM Activity as A, Faculty_Participates_in as FP, Faculty as F
+   /*>     WHERE A.actid = FP.actid AND FP.FacID = F.FacID
+   /*>     ) as fs
+   /*>     GROUP BY fs.ActivityName
+   /*>     HAVING COUNT(fs.FI) = 
+   /*>         (SELECT t.EIC, t.GCG 
+   /*>             FROM
+   /*>                 (
+   /*>                     SELECT EI.CID as EIC, (GC.gradepoint) as GCG
+   /*>                     FROM Enrolled_in as EI, Gradeconversion as GC
+   /*>                     WHERE EI.Grade = GC.lettergrade
+   /*>                 ) as t
+   /*>                 HAVING t.GCG = 
+   /*>                     (
+   /*>                     SELECT MAX(t.GCG) 
+   /*>                         FROM
+   /*>                         (
+   /*>                             SELECT EI.CID as EIC, (GC.gradepoint) as GCG
+   /*>                             FROM Enrolled_in as EI, Gradeconversion as GC
+   /*>                             WHERE EI.Grade = GC.lettergrade
+   /*>                             ORDER BY EIC
+   /*>                         ) as s
+   /*>                     ) AND t.EIC = s.EIC
+   /*> 
+   /*>         );
+   /*> */
+MySQL [cs41517_etsai7_db]> 
+MySQL [cs41517_etsai7_db]> -- 16. List the average age of the students who do not participate in any activity.
+MySQL [cs41517_etsai7_db]> -- Working
+MySQL [cs41517_etsai7_db]> SELECT AVG(S.Age)
+    -> FROM Student as S, Participates_in as PI, Activity as A
+    -> WHERE S.StuID NOT IN (SELECT S.StuID 
+    ->         FROM Student as S, Participates_in as PI, Activity as A 
+    ->         WHERE S.StuID = PI.StuID AND A.actid = PI.actid
+    ->         );
++------------+
+| AVG(S.Age) |
++------------+
+|    19.2500 |
++------------+
+1 row in set (0.02 sec)
+
+MySQL [cs41517_etsai7_db]> 
+MySQL [cs41517_etsai7_db]> -- 17. List the student name, major name and advisor name of the student in the database
+MySQL [cs41517_etsai7_db]> --     who lives the farthest from Baltimore, MD. You should not include the city code for
+MySQL [cs41517_etsai7_db]> --     Baltimore in the query, just the name "Baltimore" and state "MD"
+MySQL [cs41517_etsai7_db]> -- Comment: Not sure why seeting MAX to the SQRT messes it up
+MySQL [cs41517_etsai7_db]> -- Working
+MySQL [cs41517_etsai7_db]> SELECT S.Lname, S.Fname, S.Major, F.Lname, F.Fname
+    -> FROM Student as S, Faculty as F, 
+    -> (
+    ->     SELECT C.city_name as ccn, S.Lname, S.Fname,(SQRT(POW(C.latitude - Balt.Blat,2) + POW(C.longitude - Balt.Blon,2))) as md, S.StuID as SCT
+    ->     FROM Student as S, City as C,
+    ->     (
+    ->         SELECT DISTINCT(C.latitude) as Blat, (C.longitude) as Blon
+    ->         FROM City as C
+    ->         WHERE C.city_name = "Baltimore" AND C.state = "MD"
+    ->     ) as Balt
+    ->     WHERE S.city_code = C.city_code
+    -> ) as Stu_cit
+    -> WHERE Stu_cit.SCT = S.StuID AND S.Advisor = F.FacID
+    -> ORDER BY Stu_cit.md DESC
+    -> LIMIT 1; 
++-------+-------+-------+--------+-------+
+| Lname | Fname | Major | Lname  | Fname |
++-------+-------+-------+--------+-------+
+| Han   | Jun   |   100 | Priebe | Carey |
++-------+-------+-------+--------+-------+
+1 row in set (0.00 sec)
+
+MySQL [cs41517_etsai7_db]> 
+MySQL [cs41517_etsai7_db]> -- 20. List all students who smoke and have working fireplaces in their dorms.
+MySQL [cs41517_etsai7_db]> -- Working
+MySQL [cs41517_etsai7_db]> SELECT S.Lname, S.Fname 
+    -> FROM Student as S, Lives_in as LI, Has_amenity as HA, Dorm_amenity as DA, Preferences as P
+    -> WHERE S.StuID = P.StuID AND P.Smoking = "Yes" AND S.StuID = LI.StuID AND LI.dormid = HA.dormid 
+    ->     AND HA.amenid = DA.amenid AND DA.amenity_name = "Working Fireplaces"; 
++----------+--------+
+| Lname    | Fname  |
++----------+--------+
+| Nelson   | Jandy  |
+| Lee      | Derek  |
+| Lee      | Susan  |
+| Thornton | Ian    |
+| Andreou  | George |
+| Shieber  | David  |
+| Goldman  | Mark   |
++----------+--------+
+7 rows in set (0.00 sec)
+
+MySQL [cs41517_etsai7_db]> 
+MySQL [cs41517_etsai7_db]> -- 21. Print the names of all students from NY, who live in Wolman,  who major
+MySQL [cs41517_etsai7_db]> --     in CS, who are allergic to peanut butter and who are majors in the 
+MySQL [cs41517_etsai7_db]> --     CS Department
+MySQL [cs41517_etsai7_db]> -- Working - Empty Set
+MySQL [cs41517_etsai7_db]> SELECT DISTINCT(S.Lname), S.Fname
+    -> FROM Student as S, City as C, Has_Allergy as HA
+    -> WHERE S.city_code = C.city_code AND C.state = "NY" AND S.StuID = HA.StuID AND HA.Allergy = "Nuts"
+    ->     AND S.major = 600;
+Empty set (0.01 sec)
+
+MySQL [cs41517_etsai7_db]> 
+MySQL [cs41517_etsai7_db]> -- 22. List the names of all activities that at least one boy likes and no girl loves
+MySQL [cs41517_etsai7_db]> -- Working
+MySQL [cs41517_etsai7_db]> SELECT DISTINCT(A.activity_name)
+    -> FROM Activity as A, Student as S, Participates_in as PI
+    -> WHERE A.actid NOT IN (SELECT DISTINCT(A.actid)
+    ->                         FROM Student as S, Participates_in as PI, Activity as A
+    ->                         WHERE S.Sex = 'F' AND S.StuID = PI.StuID AND PI.actID = A.actid
+    ->                      )
+    -> AND A.actID IN ( SELECT DISTINCT(A.actid)
+    ->                         FROM Student as S, Participates_in as PI, Activity as A
+    ->                         WHERE S.Sex = 'M' AND S.StuID = PI.StuID AND PI.actID = A.actid
+    ->                      );
++-----------------+
+| activity_name   |
++-----------------+
+| Volleyball      |
+| Extreme Canasta |
+| Proselytizing   |
++-----------------+
+3 rows in set (0.01 sec)
+
+MySQL [cs41517_etsai7_db]> 
+MySQL [cs41517_etsai7_db]> -- 24. List the names of students who suffer from every allergy type
+MySQL [cs41517_etsai7_db]> -- Can compare number of allergies 
+MySQL [cs41517_etsai7_db]> -- Working Empty Set --Check
+MySQL [cs41517_etsai7_db]> 
+MySQL [cs41517_etsai7_db]> SELECT stud.SL, stud.SF
+    -> FROM 
+    ->     (
+    ->         SELECT S.StuID as SSI, S.Lname as SL, S.Fname as SF, (AT.Allergy) as at
+    ->         FROM Student as S, Allergy_Type as AT, Has_Allergy as HA   
+    ->         WHERE S.StuID = HA.StuID AND HA.Allergy = AT.Allergy
+    ->     ) as stud
+    ->     GROUP BY stud.SSI
+    ->     HAVING COUNT(stud.at) = ((
+    ->                         SELECT COUNT(AT.Allergy) as ct
+    ->                         FROM Allergy_Type as AT
+    ->                     ) );
+Empty set (0.00 sec)
+
+MySQL [cs41517_etsai7_db]> 
+MySQL [cs41517_etsai7_db]> -- 25. List the most common allergy name (and its allergy type) suffered by students older
+MySQL [cs41517_etsai7_db]> --     than 25.
+MySQL [cs41517_etsai7_db]> -- Working
+MySQL [cs41517_etsai7_db]> SELECT al.Allergy, al.AllergyType
+    -> FROM
+    ->     (
+    ->         SELECT  AT.Allergy as Allergy, AT.AllergyType as AllergyType
+    ->         FROM Student as S, Allergy_Type as AT, Has_Allergy as HA
+    ->         WHERE S.Age > 25 AND S.StuID = HA.StuID AND AT.Allergy = HA.Allergy
+    ->     ) as al
+    ->     GROUP BY al.Allergy
+    ->     HAVING COUNT(al.Allergy) = 
+    ->         (SELECT MAX(t.ct)
+    ->             FROM
+    ->                 (
+    ->                     SELECT COUNT(AT.Allergy) as ct, AT.Allergy as ATA
+    ->                     FROM Student as S, Allergy_Type as AT, Has_Allergy as HA
+    ->                     WHERE S.Age > 25 AND S.StuID = HA.StuID AND AT.Allergy = HA.Allergy
+    ->                     GROUP BY AT.Allergy 
+    ->                 ) as t
+    ->         );
++-------------+---------------+
+| Allergy     | AllergyType   |
++-------------+---------------+
+| Tree Pollen | environmental |
++-------------+---------------+
+1 row in set (0.00 sec)
+
+MySQL [cs41517_etsai7_db]> 
+MySQL [cs41517_etsai7_db]> -- 27. List the name, age, and major of all students enrolled in a class taught by their advisor
+MySQL [cs41517_etsai7_db]> --     (also include the name of the advisor)
+MySQL [cs41517_etsai7_db]> -- Working
+MySQL [cs41517_etsai7_db]> SELECT S.Lname, S.Fname, S.Age, S.Major, F.Lname, F.Fname
+    -> FROM Student as S, Faculty as F, Enrolled_in as EI, Course as C
+    -> WHERE S.StuID = EI.StuID AND EI.CID = C.CID AND C.Instructor = F.FacID AND S.Advisor = C.Instructor;
++----------+--------+------+-------+----------+---------+
+| Lname    | Fname  | Age  | Major | Lname    | Fname   |
++----------+--------+------+-------+----------+---------+
+| Kim      | Tracy  |   19 |   600 | Awerbuch | Baruch  |
+| Jones    | Shiela |   21 |   600 | Brill    | Eric    |
+| Gompers  | Paul   |   26 |   600 | Goodrich | Michael |
+| Apap     | Lisa   |   18 |   600 | Amir     | Yair    |
+| Schwartz | Mark   |   17 |   600 | Yarowsky | David   |
+| Schmidt  | Sarah  |   26 |    50 | Frank    | Robert  |
++----------+--------+------+-------+----------+---------+
+6 rows in set (0.00 sec)
+
+MySQL [cs41517_etsai7_db]> 
+MySQL [cs41517_etsai7_db]> -- 28. List the student name, course name, instructor name, and letter grade for all classes
+MySQL [cs41517_etsai7_db]> --     enrolled in by students who are early risers and have no allergies and do not smoke
+MySQL [cs41517_etsai7_db]> -- Working
+MySQL [cs41517_etsai7_db]> SELECT DISTINCT(S.Lname), S.Fname, C.CName, F.Lname, F.Fname, EI.Grade
+    -> FROM Student as S, Preferences as P, Has_Allergy as HA, Course as C, Faculty as F, Enrolled_in as EI
+    -> WHERE S.StuID = P.StuID AND P.SleepHabits = "EarlyRiser" AND P.Smoking = "no" 
+    ->     AND S.StuID != HA.StuID AND S.StuID = EI.StuID AND F.FacID = C.Instructor
+    ->     AND EI.CID = C.CID;
++--------+---------+-----------------------------------------+--------------+-----------+-------+
+| Lname  | Fname   | CName                                   | Lname        | Fname     | Grade |
++--------+---------+-----------------------------------------+--------------+-----------+-------+
+| Norris | Charles | INTRO TO PROGRAMMING IN JAVA            | Jones        | Stacey    | A     |
+| Norris | Charles | DATA STRUCTURES in JAVA                 | Goodrich     | Michael   | A     |
+| Rugh   | Eric    | DATA STRUCTURES in JAVA                 | Goodrich     | Michael   | A     |
+| Rugh   | Eric    | COMPUTER SYSTEM FUNDAMENTALS            | Masson       | Gerald    | A     |
+| Epp    | Eric    | INTRO TO PROGRAMMING IN JAVA            | Jones        | Stacey    | B+    |
+| Wilson | Bruce   | INTRO TO PROGRAMMING IN C/C++           | Houlahan     | Joanne    | A-    |
+| Kumar  | Dinesh  | DATABASE SYSTEMS                        | Yarowsky     | David     | C-    |
+| Norris | Charles | DATABASE SYSTEMS                        | Yarowsky     | David     | A+    |
+| Rugh   | Eric    | DATABASE SYSTEMS                        | Yarowsky     | David     | A+    |
+| Epp    | Eric    | DATABASE SYSTEMS                        | Yarowsky     | David     | B     |
+| Kumar  | Dinesh  | QUANTITATIVE MEDICAL COMPUTING          | Taylor       | Russell   | A-    |
+| Kumar  | Dinesh  | ALGORITHMS I                            | Awerbuch     | Baruch    | A+    |
+| Norris | Charles | QUANTITATIVE MEDICAL COMPUTING          | Taylor       | Russell   | B     |
+| Norris | Charles | ALGORITHMS I                            | Awerbuch     | Baruch    | B     |
+| Kumar  | Dinesh  | COMPUTER VISION                         | Angelopoulou | Ellie     | C     |
+| Kumar  | Dinesh  | INTRO TO NATURAL LANGUAGE PROCESSING    | Brill        | Eric      | A     |
+| Norris | Charles | COMPUTER VISION                         | Angelopoulou | Ellie     | B     |
+| Wilson | Bruce   | COMPUTER VISION                         | Angelopoulou | Ellie     | A     |
+| Wilson | Bruce   | INTRO TO NATURAL LANGUAGE PROCESSING    | Brill        | Eric      | C     |
+| Norris | Charles | MULTIMEDIA COMPUTING                    | Delcher      | Arthur    | A     |
+| Kumar  | Dinesh  | SUPERCOMPUTING                          | Delcher      | Arthur    | C-    |
+| Kumar  | Dinesh  | DISTRIBUTED SYSTEMS                     | Amir         | Yair      | C-    |
+| Rugh   | Eric    | DISTRIBUTED SYSTEMS                     | Amir         | Yair      | A+    |
+| Smith  | Sarah   | DISTRIBUTED SYSTEMS                     | Amir         | Yair      | A+    |
+| Rugh   | Eric    | INTRODUCTION TO PROBABILITY             | Fill         | James     | B+    |
+| Wilson | Bruce   | THE HISTORY OF ROMANCE LANGUAGES        | Burzio       | Luigi     | B     |
+| Wilson | Bruce   | FORMAL METHODS IN COGNITIVE SCIENCE     | Burzio       | Luigi     | B     |
+| Epp    | Eric    | SOUND STRUCTURES IN NATURAL LANGUAGE    | Burzio       | Luigi     | B     |
+| Wilson | Bruce   | NUMERICAL ANALYSIS                      | Han          | Shih-Ping | B     |
+| Smith  | Sarah   | CONTROL SYSTEMS                         | Iglesias     | Pablo     | C     |
+| Epp    | Eric    | MIND, BRAIN, COMPUTERS                  | Smolensky    | Paul      | B+    |
+| Epp    | Eric    | COGNITIVE NEUROSCIENCE                  | Rapp         | Brenda    | B     |
+| Wilson | Bruce   | RESEARCH SEMINAR IN COGNITIVE PROCESSES | Rapp         | Brenda    | C     |
+| Smith  | Sarah   | CIRCUITS                                | Joseph       | Richard   | B+    |
+| Smith  | Sarah   | MICROPROCESSOR LAB I                    | Glaser       | Robert    | B     |
++--------+---------+-----------------------------------------+--------------+-----------+-------+
+35 rows in set (1.54 sec)
+
+MySQL [cs41517_etsai7_db]> 
+MySQL [cs41517_etsai7_db]> -- 29. List the name and age of both the oldest and the youngest student in the database
+MySQL [cs41517_etsai7_db]> --     (include in a single table with 6 columns, FN1, LN1, Age1, FN2, LN2, Age2)
+MySQL [cs41517_etsai7_db]> -- Working
+MySQL [cs41517_etsai7_db]> SELECT S.Fname as FN1, S.Lname as LN1, S.Age as Age1 
+    ->     FROM Student as S 
+    ->     WHERE S.Age = ( SELECT MAX(S.Age) From Student as S)
+    -> union
+    -> SELECT S.Fname as FN2, S.Lname as LN2, S.Age as Age2
+    ->     FROM Student as S 
+    ->     WHERE S.Age = ( SELECT MIN(S.Age) From Student as S);
++-------+--------+------+
+| FN1   | LN1    | Age1 |
++-------+--------+------+
+| Bruce | Wilson |   27 |
+| Susan | Lee    |   16 |
++-------+--------+------+
+2 rows in set (0.00 sec)
+
+MySQL [cs41517_etsai7_db]> 
+MySQL [cs41517_etsai7_db]> -- 30. List all pairs of students enrolled in the same course and sharing the same first name
+MySQL [cs41517_etsai7_db]> --     (give FN1,LN1,FN2,LN2 where FN1=FN2). Make sure that students are not paired
+MySQL [cs41517_etsai7_db]> --     with themselves. Also, because of symmetry, each pair will appear twice as a result
+MySQL [cs41517_etsai7_db]> --     in reversed order(e.g. (John Smith, John Winters) and (John Winters,John Smith)).
+MySQL [cs41517_etsai7_db]> --     Eliminate this duplication (this can be done as a simple change when eliminating 
+MySQL [cs41517_etsai7_db]> --     self pairings)
+MySQL [cs41517_etsai7_db]> -- Working
+MySQL [cs41517_etsai7_db]> SELECT DISTINCT(S.Fname) as FN1, S.Lname as LN1, S2.Fname as FN2, S2.Lname as LN2
+    ->     FROM Student as S, Student as S2, Enrolled_in as EI1, Enrolled_in as EI2, Course as C
+    ->     WHERE S.Fname = S2.Fname AND S.Lname != S2.Lname
+    ->         AND S.StuID = EI1.StuID AND EI1.CID = C.CID
+    ->         AND S2.StuID = EI2.StuID AND EI2.CID = EI2.CID
+    ->         AND EI1.CID = EI2.CID
+    ->         AND S.StuID < S2.StuID;
++---------+----------+---------+---------+
+| FN1     | LN1      | FN2     | LN2     |
++---------+----------+---------+---------+
+| Michael | Leighton | Michael | Woods   |
+| Mark    | Schwartz | Mark    | Goldman |
+| Paul    | Gompers  | Paul    | Brody   |
+| Lisa    | Apap     | Lisa    | Cheng   |
+| Eric    | Rugh     | Eric    | Brown   |
+| Eric    | Pang     | Eric    | Brown   |
+| Eric    | Rugh     | Eric    | Epp     |
+| Eric    | Brown    | Eric    | Epp     |
++---------+----------+---------+---------+
+8 rows in set (0.04 sec)
+
+MySQL [cs41517_etsai7_db]> 
+MySQL [cs41517_etsai7_db]> -- 31. Find the total number of CS majors who are smokers and who do not like anyone in 
+MySQL [cs41517_etsai7_db]> --     the database. 
+MySQL [cs41517_etsai7_db]> -- Working
+MySQL [cs41517_etsai7_db]> SELECT COUNT(DISTINCT(S.StuID)) as count
+    -> FROM Student as S, Preferences as P, Likes as L, Department as D
+    -> WHERE S.StuID =  P.StuID AND P.Smoking = "Yes" AND 
+    ->         D.DName = "Computer Science" AND S.Major = D.DNO AND S.StuID != L.WhoLikes;
++-------+
+| count |
++-------+
+|     9 |
++-------+
+1 row in set (0.00 sec)
+
+MySQL [cs41517_etsai7_db]> 
+MySQL [cs41517_etsai7_db]> -- 32. List all the students who have minored in Math, but also have an 'A+' or 'A' from a
+MySQL [cs41517_etsai7_db]> --     computer science course.
+MySQL [cs41517_etsai7_db]> -- Working Empty Set
+MySQL [cs41517_etsai7_db]> SELECT DISTINCT(S.Lname), S.Fname, C.CName, EI.Grade
+    -> FROM Student as S, Department as D, Minor_in as MI, Enrolled_in as EI, Course as C 
+    -> WHERE (S.StuID = EI.StuID AND EI.CID = C.CID AND C.DNO = D.DNO 
+    ->     AND D.Dname = "Computer Science") AND (EI.Grade = 'A+' OR EI.Grade = 'A')
+    ->     AND S.StuID = MI.StuID AND (MI.DNO = D.DNO AND D.Dname = "Mathematics");
+Empty set (0.00 sec)
+
+MySQL [cs41517_etsai7_db]> 
+MySQL [cs41517_etsai7_db]> -- 33. List all courses Bruce Wilson is enrolled in, giving the course name, the number of
+MySQL [cs41517_etsai7_db]> --     credits offered by the class (e.g. 3), Bruce's letter grade in the class, and his 
+MySQL [cs41517_etsai7_db]> --     numberic gradepoint for the class.
+MySQL [cs41517_etsai7_db]> -- Working
+MySQL [cs41517_etsai7_db]> SELECT C.CID as CID, C.CName as CourseName, C.Credits as Credits, 
+    ->     EI.Grade as LetGrade, GC.gradepoint  as Gradepoint
+    -> FROM Student as S, Enrolled_in as EI, Course as C, Gradeconversion as GC 
+    -> WHERE S.Lname = "Wilson" AND S.Fname = "Bruce" AND S.StuID = EI.StuID AND EI.CID = C.CID
+    ->     AND EI.Grade = GC.lettergrade;
++---------+-----------------------------------------+---------+----------+------------+
+| CID     | CourseName                              | Credits | LetGrade | Gradepoint |
++---------+-----------------------------------------+---------+----------+------------+
+| 050.427 | THE HISTORY OF ROMANCE LANGUAGES        |       3 | B        |          3 |
+| 050.670 | FORMAL METHODS IN COGNITIVE SCIENCE     |       3 | B        |          3 |
+| 050.802 | RESEARCH SEMINAR IN COGNITIVE PROCESSES |       1 | C        |          2 |
+| 550.681 | NUMERICAL ANALYSIS                      |       3 | B        |          3 |
+| 600.109 | INTRO TO PROGRAMMING IN C/C++           |       3 | A-       |        3.7 |
+| 600.461 | COMPUTER VISION                         |       3 | A        |          4 |
+| 600.465 | INTRO TO NATURAL LANGUAGE PROCESSING    |       3 | C        |          2 |
++---------+-----------------------------------------+---------+----------+------------+
+7 rows in set (0.03 sec)
+
+MySQL [cs41517_etsai7_db]> 
+MySQL [cs41517_etsai7_db]> -- 34. Compute Bruce Wilson's gpa (for all courses listed for him in the enrolled_in)
+MySQL [cs41517_etsai7_db]> --     ,restricted to courses in his major. The GPA is defined as the sum of 
+MySQL [cs41517_etsai7_db]> --     (gradepoint xcourse.cfredits) for all his major courses divided by the sum of 
+MySQL [cs41517_etsai7_db]> --     his course.credits for all his major courses. For the exampole above, assuming
+MySQL [cs41517_etsai7_db]> --     his major is 340, his major GPA would be (12 + 6.2)/5. You need only to list his 
+MySQL [cs41517_etsai7_db]> --     student ID number, total number of recdits he has enrolled in and his major GPA.
+MySQL [cs41517_etsai7_db]> -- Working
+MySQL [cs41517_etsai7_db]> SELECT (SUM((C.Credits * GC.gradepoint))/SUM(C.Credits)) as MajorGPA
+    -> FROM Student as S, Enrolled_in as EI, Course as C, Gradeconversion as GC,
+    ->     Department as D
+    -> WHERE S.Lname = "Wilson" AND S.Fname = "Bruce" AND S.Major = D.DNO AND S.StuID = EI.StuID 
+    ->     AND EI.CID = C.CID AND EI.Grade = GC.lettergrade AND C.DNO = S.Major; 
++------------------+
+| MajorGPA         |
++------------------+
+| 3.23333334922791 |
++------------------+
+1 row in set (0.01 sec)
+
+MySQL [cs41517_etsai7_db]> 
+MySQL [cs41517_etsai7_db]> -- 39. Create a table (filled with appropriate values) that maps between a letter grade and
+MySQL [cs41517_etsai7_db]> --     the next lower letter grade. Assume that the grade lower than F is F.
+MySQL [cs41517_etsai7_db]> drop table LowerGrade;
+Query OK, 0 rows affected (0.01 sec)
+
+MySQL [cs41517_etsai7_db]> create table LowerGrade (
+    ->        LetterGrade      VARCHAR(2),
+    ->        NextLower        VARCHAR(2)
+    -> );
+Query OK, 0 rows affected (0.00 sec)
+
+MySQL [cs41517_etsai7_db]> insert into LowerGrade values ( 'A+', 'A');
+Query OK, 1 row affected (0.00 sec)
+
+MySQL [cs41517_etsai7_db]> insert into LowerGrade values ( 'A', 'A-');
+Query OK, 1 row affected (0.00 sec)
+
+MySQL [cs41517_etsai7_db]> insert into LowerGrade values ( 'A-', 'B+');
+Query OK, 1 row affected (0.00 sec)
+
+MySQL [cs41517_etsai7_db]> insert into LowerGrade values ( 'B+', 'B');
+Query OK, 1 row affected (0.00 sec)
+
+MySQL [cs41517_etsai7_db]> insert into LowerGrade values ( 'B', 'B-');
+Query OK, 1 row affected (0.00 sec)
+
+MySQL [cs41517_etsai7_db]> insert into LowerGrade values ( 'B-', 'C+');
+Query OK, 1 row affected (0.00 sec)
+
+MySQL [cs41517_etsai7_db]> insert into LowerGrade values ( 'C+', 'C');
+Query OK, 1 row affected (0.00 sec)
+
+MySQL [cs41517_etsai7_db]> insert into LowerGrade values ( 'C', 'C-');
+Query OK, 1 row affected (0.00 sec)
+
+MySQL [cs41517_etsai7_db]> insert into LowerGrade values ( 'C-', 'D+');
+Query OK, 1 row affected (0.00 sec)
+
+MySQL [cs41517_etsai7_db]> insert into LowerGrade values ( 'D+', 'D');
+Query OK, 1 row affected (0.00 sec)
+
+MySQL [cs41517_etsai7_db]> insert into LowerGrade values ( 'D', 'D-');
+Query OK, 1 row affected (0.00 sec)
+
+MySQL [cs41517_etsai7_db]> insert into LowerGrade values ( 'D-', 'F+');
+Query OK, 1 row affected (0.00 sec)
+
+MySQL [cs41517_etsai7_db]> insert into LowerGrade values ( 'F+', 'F');
+Query OK, 1 row affected (0.00 sec)
+
+MySQL [cs41517_etsai7_db]> insert into LowerGrade values ( 'F', 'F');
+Query OK, 1 row affected (0.00 sec)
+
+MySQL [cs41517_etsai7_db]> 
+MySQL [cs41517_etsai7_db]> /* -- This is the Update Part. Uncomment to run
+   /*> UPDATE  Student as S, Course as C, Enrolled_in as EI, Faculty as F, LowerGrade as LG
+   /*> SET EI.Grade = LG.NextLower
+   /*> WHERE S.Advisor = F.FacID AND S.StuID = EI.StuID 
+   /*>         AND EI.CID = C.CID AND EI.Grade = LG.LetterGrade
+   /*>         AND F.FacID = C.Instructor;
+   /*> */
+MySQL [cs41517_etsai7_db]> 
+MySQL [cs41517_etsai7_db]> /* This is not related to query
+   /*> SELECT DISTINCT(S.Lname), S.Fname, C.CID, S.Advisor, F.FacID
+   /*> FROM Student as S, Course as C, Enrolled_in as EI, Faculty as F
+   /*> WHERE S.Advisor = F.FacID AND S.StuID = EI.StuID 
+   /*>         AND EI.CID = C.CID
+   /*>         AND F.FacID = C.Instructor;
+   /*> */
+MySQL [cs41517_etsai7_db]> 
+MySQL [cs41517_etsai7_db]> -- 40. List names of all students in the CS department who are in a unilateral love
+MySQL [cs41517_etsai7_db]> --     (i.e. they love someone who does not love them back).
+MySQL [cs41517_etsai7_db]> -- Working
+MySQL [cs41517_etsai7_db]> SELECT DISTINCT(S1.Lname), S1.Fname, S1.StuID,L.WhoIsLoved
+    -> FROM Student as S1, Student as S2, Department as D, Loves as L
+    -> WHERE S1.Major = D.DNO AND D.Dname = "Computer Science" AND S2.Major = 600
+    ->     AND S1.StuID = L.WhoLoves 
+    ->     AND S1.StuID NOT IN (
+    ->         SELECT L.WhoIsLoved
+    ->         FROM Student as S1, Student as S2, Department as D, Loves as L
+    ->         WHERE S1.Major = D.DNO AND D.Dname = "Computer Science" AND S2.Major = 600
+    ->             AND S1.StuID = L.WhoLoves);
++-------+--------+-------+------------+
+| Lname | Fname  | StuID | WhoIsLoved |
++-------+--------+-------+------------+
+| Kim   | Tracy  |  1002 |       1005 |
+| Jones | Shiela |  1003 |       1009 |
+| Apap  | Lisa   |  1007 |       1011 |
+| Davis | Steven |  1012 |       1024 |
+| Pang  | Arthur |  1019 |       1015 |
++-------+--------+-------+------------+
+5 rows in set (0.00 sec)
+
+MySQL [cs41517_etsai7_db]> 
+MySQL [cs41517_etsai7_db]> -- 41. List sleep habits of all students who have two majors and have Mark Guiliano as
+MySQL [cs41517_etsai7_db]> --     advisor.
+MySQL [cs41517_etsai7_db]> -- Working Empty Set
+MySQL [cs41517_etsai7_db]> SELECT DISTINCT(S.Lname), S.Fname
+    -> FROM Student as S, Faculty as F,
+    -> (
+    ->     SELECT S.LName as SL, S.Fname as SF, (MI.StuID) as SM
+    ->     FROM Student as S, Minor_in as MI
+    ->     WHERE S.StuID = MI.StuID
+    ->     GROUP BY S.StuID
+    -> ) as t 
+    -> WHERE S.Advisor = F.FacID AND F.Lname = "Guiliano" AND F.Fname = "Mark"
+    -> HAVING COUNT(t.SM) = 2;
+Empty set (0.00 sec)
+
+MySQL [cs41517_etsai7_db]> 
+MySQL [cs41517_etsai7_db]> 
+MySQL [cs41517_etsai7_db]> -- 42. List the names of clubs which have members who have not taken a course that is 
+MySQL [cs41517_etsai7_db]> --     taught by a faculty that works in the sam building as Yair Amir.
+MySQL [cs41517_etsai7_db]> -- Working
+MySQL [cs41517_etsai7_db]> SELECT DISTINCT(Cl.ClubName)
+    -> FROM Student as S, Enrolled_in as EI, Course as C, Member_of_club as MoC, Club as Cl,
+    -> (
+    ->     SELECT F.Lname, F.Fname, F.FacID as FFI
+    ->     FROM Faculty as F,
+    ->     (
+    ->         SELECT F.Building as FB
+    ->         FROM Faculty as F
+    ->         WHERE F.Lname = "Amir" AND F.Fname = "Yair"
+    ->     ) as t
+    ->     WHERE F.Building = t.FB
+    -> ) as si
+    -> WHERE S.StuID = EI.StuID AND EI.CID = C.CID AND C.Instructor != si.FFI
+    ->     AND S.StuID = MoC.StuID AND MoC.ClubID = Cl.ClubID;
++-----------------------------+
+| ClubName                    |
++-----------------------------+
+| Bootup Baltimore            |
+| Tennis Club                 |
+| Hopkins Student Enterprises |
++-----------------------------+
+3 rows in set (0.23 sec)
+
+MySQL [cs41517_etsai7_db]> 
+MySQL [cs41517_etsai7_db]> -- 43. List the names, course titles and minimum grade given for courses where the minimum 
+MySQL [cs41517_etsai7_db]> --     grade is greater than or equal to a B- (grade point conversion of at least 2.7)
+MySQL [cs41517_etsai7_db]> -- Working
+MySQL [cs41517_etsai7_db]> SELECT *
+    -> FROM (
+    ->     SELECT C.CID, C.CName, MIN(GC.gradepoint) as Minimum
+    ->     FROM Course as C, Enrolled_in as EI, Gradeconversion as GC
+    ->     WHERE C.CID = EI.CID AND EI.Grade = GC.lettergrade
+    ->     GROUP BY C.CID
+    ->     ORDER BY C.CName
+    -> ) as t
+    -> WHERE t.Minimum >= 2.7;
++---------+----------------------------------------+---------+
+| CID     | CName                                  | Minimum |
++---------+----------------------------------------+---------+
+| 600.463 | ALGORITHMS I                           |     2.7 |
+| 520.213 | CIRCUITS                               |       3 |
+| 050.821 | COMP. MODELS OF SENTENCE PROCESSING    |       4 |
+| 600.333 | COMPUTER SYSTEM FUNDAMENTALS           |       3 |
+| 520.345 | ECE LABORATORY                         |       3 |
+| 050.670 | FORMAL METHODS IN COGNITIVE SCIENCE    |       3 |
+| 550.661 | FOUNDATIONS OF OPTIMIZATION            |     2.7 |
+| 600.657 | HIGH PERFORMANCE GRAPHICS AND MODELING |       3 |
+| 600.109 | INTRO TO PROGRAMMING IN C/C++          |     2.7 |
+| 600.103 | INTRODUCTION TO COMPUTER SCIENCE       |       3 |
+| 050.381 | LANGUAGE DEVELOPMENT                   |     2.7 |
+| 550.291 | LINEAR ALGEBRA AND DIFFERENTIAL EQNS   |       3 |
+| 520.349 | MICROPROCESSOR LAB I                   |       3 |
+| 050.109 | MIND, BRAIN, COMPUTERS                 |     2.7 |
+| 550.681 | NUMERICAL ANALYSIS                     |       3 |
+| 550.310 | PROBABILITY AND STATISTICS             |     2.7 |
+| 550.620 | PROBABILITY THEORY I                   |     2.7 |
+| 600.787 | SEMINAR ON COMPUTATIONAL GEOMETRY      |       3 |
+| 050.325 | SOUND STRUCTURES IN NATURAL LANGUAGE   |       3 |
+| 550.631 | STATISTICAL INFERENCE                  |     3.7 |
+| 550.626 | STOCHASTIC PROCESSES II                |       3 |
+| 050.427 | THE HISTORY OF ROMANCE LANGUAGES       |       3 |
++---------+----------------------------------------+---------+
+22 rows in set (0.03 sec)
+
+MySQL [cs41517_etsai7_db]> 
+MySQL [cs41517_etsai7_db]> -- 45. List the names, course titles and average grade (converted to grade points) for all
+MySQL [cs41517_etsai7_db]> --     courses where the average grade in the class is at least 2.7
+MySQL [cs41517_etsai7_db]> -- Working
+MySQL [cs41517_etsai7_db]> SELECT *
+    -> FROM (
+    ->     SELECT C.CID, C.CName, AVG(GC.gradepoint) as av
+    ->     FROM Course as C, Enrolled_in as EI, Gradeconversion as GC
+    ->     WHERE C.CID = EI.CID AND EI.Grade = GC.lettergrade
+    ->     GROUP BY C.CID
+    -> ) as t
+    -> WHERE t. av >=2.7; 
++---------+----------------------------------------+------------------+
+| CID     | CName                                  | av               |
++---------+----------------------------------------+------------------+
+| 050.109 | MIND, BRAIN, COMPUTERS                 | 2.90000001589457 |
+| 050.325 | SOUND STRUCTURES IN NATURAL LANGUAGE   | 3.56666668256124 |
+| 050.381 | LANGUAGE DEVELOPMENT                   | 2.70000004768372 |
+| 050.427 | THE HISTORY OF ROMANCE LANGUAGES       | 3.35000002384186 |
+| 050.670 | FORMAL METHODS IN COGNITIVE SCIENCE    |                3 |
+| 050.821 | COMP. MODELS OF SENTENCE PROCESSING    |                4 |
+| 520.213 | CIRCUITS                               | 3.45999999046326 |
+| 520.345 | ECE LABORATORY                         | 3.33333333333333 |
+| 520.349 | MICROPROCESSOR LAB I                   | 3.66666666666667 |
+| 520.353 | CONTROL SYSTEMS                        | 3.23333334922791 |
+| 550.291 | LINEAR ALGEBRA AND DIFFERENTIAL EQNS   | 3.33333333333333 |
+| 550.310 | PROBABILITY AND STATISTICS             | 3.56666668256124 |
+| 550.420 | INTRODUCTION TO PROBABILITY            | 3.13076922985224 |
+| 550.471 | COMBINATORIAL ANALYSIS                 | 3.33333333333333 |
+| 550.620 | PROBABILITY THEORY I                   | 3.46666669845581 |
+| 550.626 | STOCHASTIC PROCESSES II                |                3 |
+| 550.631 | STATISTICAL INFERENCE                  | 3.70000004768372 |
+| 550.661 | FOUNDATIONS OF OPTIMIZATION            | 2.70000004768372 |
+| 550.671 | COMBINATORIAL ANALYSIS                 | 2.90000001589457 |
+| 550.681 | NUMERICAL ANALYSIS                     | 3.42500001192093 |
+| 600.103 | INTRODUCTION TO COMPUTER SCIENCE       |              3.5 |
+| 600.107 | INTRO TO PROGRAMMING IN JAVA           | 3.29166664679845 |
+| 600.109 | INTRO TO PROGRAMMING IN C/C++          | 3.20000004768372 |
+| 600.113 | EXPLORING THE INTERNET                 | 2.90000001589457 |
+| 600.211 | UNIX SYSTEMS PROGRAMMING               |                3 |
+| 600.227 | DATA STRUCTURES in JAVA                | 3.63636363636364 |
+| 600.232 | MULTIMEDIA COMPUTING                   | 3.08000001907349 |
+| 600.303 | SUPERCOMPUTING                         |  3.2428571496691 |
+| 600.315 | DATABASE SYSTEMS                       | 3.17142857824053 |
+| 600.333 | COMPUTER SYSTEM FUNDAMENTALS           | 3.67142857824053 |
+| 600.337 | DISTRIBUTED SYSTEMS                    | 3.22222222222222 |
+| 600.415 | DATABASE SYSTEMS                       | 3.14285714285714 |
+| 600.437 | DISTRIBUTED SYSTEMS                    | 3.14000000953674 |
+| 600.445 | QUANTITATIVE MEDICAL COMPUTING         | 3.08000001907349 |
+| 600.461 | COMPUTER VISION                        | 3.21250000596046 |
+| 600.463 | ALGORITHMS I                           | 3.33636364069852 |
+| 600.465 | INTRO TO NATURAL LANGUAGE PROCESSING   | 3.25555555025736 |
+| 600.657 | HIGH PERFORMANCE GRAPHICS AND MODELING |                3 |
+| 600.787 | SEMINAR ON COMPUTATIONAL GEOMETRY      |                3 |
++---------+----------------------------------------+------------------+
+39 rows in set (0.03 sec)
+
+MySQL [cs41517_etsai7_db]> 
+MySQL [cs41517_etsai7_db]> /*
+   /*> SELECT *
+   /*>     FROM Course as C, Enrolled_in as EI, Gradeconversion as GC
+   /*>     WHERE C.CID = EI.CID AND EI.Grade = GC.lettergrade
+   /*>     ORDER BY C.CName;
+   /*> */
+MySQL [cs41517_etsai7_db]> 
+MySQL [cs41517_etsai7_db]> -- 47. List the name and total enrollement of the course with the largest number of enrolled
+MySQL [cs41517_etsai7_db]> --     students.
+MySQL [cs41517_etsai7_db]> -- Working
+MySQL [cs41517_etsai7_db]> SELECT t.CC as CourseName,(t.ct)
+    -> FROM
+    -> (
+    ->     SELECT C.CName as CC, (COUNT(EI.StuID)) as ct, C.CID as CCID
+    ->     FROM Course as C, Enrolled_in as EI, Student as S
+    ->     WHERE S.StuID = EI.StuID AND EI.CID = C.CID
+    ->     GROUP BY C.CID
+    -> ) as t
+    -> HAVING t.ct = 
+    ->     (SELECT MAX(t.ct) 
+    ->             FROM
+    ->                 (
+    ->                     SELECT C.CName as CC, (COUNT(EI.StuID)) as ct, C.CID as CCID
+    ->                     FROM Course as C, Enrolled_in as EI, Student as S
+    ->                     WHERE S.StuID = EI.StuID AND EI.CID = C.CID
+    ->                     GROUP BY C.CID
+    ->                 ) as t
+    ->         );
++------------------+----+
+| CourseName       | ct |
++------------------+----+
+| SUPERCOMPUTING   | 14 |
+| DATABASE SYSTEMS | 14 |
++------------------+----+
+2 rows in set (0.00 sec)
+
+MySQL [cs41517_etsai7_db]> 
+MySQL [cs41517_etsai7_db]> -- 49. List the first and last names of all pairs of dorm mates (and their StuID's) who
+MySQL [cs41517_etsai7_db]> --     have taken at least oe course together. You should only list a given pair of roommates
+MySQL [cs41517_etsai7_db]> --     once (do not repeate duplicates), and your answer should have 6 columns
+MySQL [cs41517_etsai7_db]> -- Working
+MySQL [cs41517_etsai7_db]> SELECT DISTINCT(S.Fname) as FN1, S.Lname as LN1, LI1.dormid, LI1.room_number,
+    ->                  S2.Fname as FN2, S2.Lname as LN2, LI1.dormid, LI2.room_number
+    ->     FROM Student as S, Student as S2, Enrolled_in as EI1, Enrolled_in as EI2, Course as C,
+    ->          Lives_in as LI1, Lives_in as LI2
+    ->     WHERE S.StuID = EI1.StuID  AND EI1.CID = C.CID AND S2.StuID = EI2.StuID 
+    ->         AND EI1.CID = EI2.CID AND S.StuID < S2.StuID
+    ->         AND S.StuID = LI1.StuID AND S2.StuID = LI2.StuID
+    ->         AND LI1.room_number = LI2.room_number AND LI1.dormid = LI2.dormid;
++-------+----------+--------+-------------+--------+---------+--------+-------------+
+| FN1   | LN1      | dormid | room_number | FN2    | LN2     | dormid | room_number |
++-------+----------+--------+-------------+--------+---------+--------+-------------+
+| Paul  | Gompers  |    160 |         333 | Steven | Davis   |    160 |         333 |
+| Derek | Lee      |    160 |         443 | Susan  | Lee     |    160 |         443 |
+| Ian   | Thornton |    160 |         405 | George | Andreou |    160 |         405 |
+| Tracy | Kim      |    100 |         112 | Sarah  | Smith   |    100 |         112 |
+| Linda | Smith    |    109 |         105 | Eric   | Brown   |    109 |         105 |
++-------+----------+--------+-------------+--------+---------+--------+-------------+
+5 rows in set (0.03 sec)
+
+MySQL [cs41517_etsai7_db]> 
+MySQL [cs41517_etsai7_db]> -- 50. List the first and last names of all pairs of roommates (and their StuID's) who
+MySQL [cs41517_etsai7_db]> --     have taken at least one course together. You should only list a given pair of room-
+MySQL [cs41517_etsai7_db]> --     -mates once (do not repeat), and your answer should have 6 columns
+MySQL [cs41517_etsai7_db]> -- Working
+MySQL [cs41517_etsai7_db]> SELECT DISTINCT(S.Fname) as FN1, S.Lname as LN1, LI1.dormid, LI1.room_number,
+    ->                  S2.Fname as FN2, S2.Lname as LN2, LI1.dormid, LI2.room_number
+    ->     FROM Student as S, Student as S2, Preferences as P1, Preferences as P2,
+    ->          Lives_in as LI1, Lives_in as LI2
+    ->     WHERE S.Major = S2.Major  
+    ->         AND S.StuID = P1.StuID AND S2.StuID = P2.StuID
+    ->         AND P1.SleepHabits = P2.SleepHabits
+    ->         AND P1.MusicType = P2.MusicType
+    ->         AND P1.Smoking = P2.Smoking
+    ->         AND S.StuID < S2.StuID
+    ->         AND S.StuID = LI1.StuID AND S2.StuID = LI2.StuID
+    ->         AND LI1.room_number = LI2.room_number AND LI1.dormid = LI2.dormid;
++-------+------+--------+-------------+-------+------+--------+-------------+
+| FN1   | LN1  | dormid | room_number | FN2   | LN2  | dormid | room_number |
++-------+------+--------+-------------+-------+------+--------+-------------+
+| Derek | Lee  |    160 |         443 | Susan | Lee  |    160 |         443 |
++-------+------+--------+-------------+-------+------+--------+-------------+
+1 row in set (0.00 sec)
+
+MySQL [cs41517_etsai7_db]> /*
+   /*> SELECT DISTINCT(S.Fname) as FN1, S.Lname as LN1, LI1.dormid, LI1.room_number,
+   /*>                  S2.Fname as FN2, S2.Lname as LN2, LI1.dormid, LI2.room_number
+   /*>     FROM Student as S, Student as S2, 
+   /*>          Lives_in as LI1, Lives_in as LI2
+   /*>     WHERE S.StuID < S2.StuID
+   /*>         AND S.StuID = LI1.StuID AND S2.StuID = LI2.StuID
+   /*>         AND LI1.room_number = LI2.room_number AND LI1.dormid = LI2.dormid;
+   /*> */
+MySQL [cs41517_etsai7_db]> -- 51. List the names, primary department, office roomnumber and office building of
+MySQL [cs41517_etsai7_db]> --     professors who have their offices in the same building as the office of their primary
+MySQL [cs41517_etsai7_db]> --     department, and teaches at least one course in their primary department
+MySQL [cs41517_etsai7_db]> SELECT DISTINCT(F.FacID), F.Lname, F.Fname, F.Room, F.Building 
+    -> FROM Faculty as F, Department as D, Member_of as Mo
+    -> WHERE F.Building = D.Building AND Mo.DNO = D.DNO AND Mo.Appt_Type = "Primary"
+    ->         AND F.FacID IN (   
+    ->                             SELECT DISTINCT(F.FacID) 
+    ->                             FROM Faculty as F, Course as C, Member_of as Mo
+    ->                             WHERE C.DNO = Mo.DNO AND Mo.Appt_Type = "Primary" AND
+    ->                                     F.FacID = C.Instructor
+    ->                         );
++-------+--------------+-----------+------+----------+
+| FacID | Lname        | Fname     | Room | Building |
++-------+--------------+-----------+------+----------+
+|  1121 | Goodrich     | Michael   | 219  | NEB      |
+|  1148 | Masson       | Gerald    | 224B | NEB      |
+|  1193 | Jones        | Stacey    | 224  | NEB      |
+|  2192 | Yarowsky     | David     | 324  | NEB      |
+|  4230 | Houlahan     | Joanne    | 328  | NEB      |
+|  6112 | Beach        | Louis     | 207  | NEB      |
+|  7712 | Awerbuch     | Baruch    | 220  | NEB      |
+|  7792 | Brill        | Eric      | 324B | NEB      |
+|  7723 | Taylor       | Russell   | 317  | NEB      |
+|  8114 | Angelopoulou | Ellie     | 316  | NEB      |
+|  8423 | Kumar        | Subodh    | 218  | NEB      |
+|  8918 | Amir         | Yair      | 308  | NEB      |
+|  9172 | Kosaraju     | Rao       | 319  | NEB      |
+|  9826 | Delcher      | Arthur    | 329  | NEB      |
+|  1823 | Davidson     | Frederic  | 119  | Barton   |
+|  2119 | Meyer        | Gerard    | 119  | Barton   |
+|  6191 | Kaplan       | Alexander | 119  | Barton   |
+|  6330 | Byrne        | William   | 119  | Barton   |
+|  6925 | Iglesias     | Pablo     | 119  | Barton   |
+|  7134 | Goutsias     | John      | 119  | Barton   |
+|  7231 | Rugh         | Wilson    | 119  | Barton   |
+|  8118 | Weinert      | Howard    | 119  | Barton   |
+|  8722 | Cauwenberghs | Gert      | 119  | Barton   |
+|  8723 | Andreou      | Andreas   | 119  | Barton   |
+|  9210 | Joseph       | Richard   | 119  | Barton   |
+|  9514 | Prince       | Jerry     | 119  | Barton   |
+|  9824 | Glaser       | Robert    | 119  | Barton   |
+|  9379 | Khurgin      | Jacob     | 119  | Barton   |
+|  1177 | Naiman       | Daniel    | 288  | Krieger  |
+|  2311 | Priebe       | Carey     | 288  | Krieger  |
+|  2738 | Fill         | James     | 288  | Krieger  |
+|  2881 | Goldman      | Alan      | 288  | Krieger  |
+|  4432 | Burzio       | Luigi     | 288  | Krieger  |
+|  5718 | Frank        | Robert    | 288  | Krieger  |
+|  6182 | Cheng        | Cheng     | 288  | Krieger  |
+|  6541 | Han          | Shih-Ping | 288  | Krieger  |
+|  6910 | Smolensky    | Paul      | 288  | Krieger  |
+|  8102 | James        | Lancelot  | 288  | Krieger  |
+|  8122 | Wierman      | John      | 288  | Krieger  |
+|  8772 | Cowen        | Lenore    | 288  | Krieger  |
+|  8791 | McCloskey    | Michael   | 288  | Krieger  |
+|  8989 | Brent        | Michael   | 288  | Krieger  |
+|  9011 | Rapp         | Brenda    | 288  | Krieger  |
+|  9823 | Pang         | Jong-Shi  | 288  | Krieger  |
+|  9922 | Hall         | Leslie    | 288  | Krieger  |
++-------+--------------+-----------+------+----------+
+45 rows in set (0.03 sec)
+
+MySQL [cs41517_etsai7_db]> 
+MySQL [cs41517_etsai7_db]> 
+MySQL [cs41517_etsai7_db]> -- 52. What is the average GPA of female students who come from Maryland?
+MySQL [cs41517_etsai7_db]> -- Working
+MySQL [cs41517_etsai7_db]> SELECT SUM(t.MajorGPA)/COUNT(t.SL) as AverageFemaleGPA
+    -> FROM(
+    ->     SELECT (SUM((C.Credits * GC.gradepoint))/SUM(C.Credits)) as MajorGPA, S.Lname as SL
+    ->     FROM Student as S, Enrolled_in as EI, Course as C, Gradeconversion as GC,
+    ->          City as Ci
+    ->     WHERE S.Sex = 'F' AND S.StuID = EI.StuID 
+    ->         AND S.city_code = Ci.city_code AND Ci.state = "MD"
+    ->         AND EI.CID = C.CID AND EI.Grade = GC.lettergrade 
+    ->         GROUP BY S.StuID 
+    -> ) as t;
++------------------+
+| AverageFemaleGPA |
++------------------+
+| 3.19513889422387 |
++------------------+
+1 row in set (0.23 sec)
+
+MySQL [cs41517_etsai7_db]> 
+MySQL [cs41517_etsai7_db]> /*
+   /*> SELECT DISTINCT(S.Lname), S.Fname
+   /*> FROM Student as S, Enrolled_in as EI, Course as C, Gradeconversion as GC,
+   /*>     Department as D, City as Ci
+   /*> WHERE S.Sex = 'F' AND S.city_code = Ci.city_code AND Ci.state = "MD"; 
+   /*> */
+MySQL [cs41517_etsai7_db]> 
+MySQL [cs41517_etsai7_db]> -- 54. List the name and StuID of the student in the database who lives farthest
+MySQL [cs41517_etsai7_db]> --     from Baltimore
+MySQL [cs41517_etsai7_db]> -- Working
+MySQL [cs41517_etsai7_db]> SELECT DISTINCT(S.Lname), S.Fname, S.StuID
+    -> FROM Student as S, Faculty as F, 
+    -> (
+    ->     SELECT C.city_name as ccn, S.Lname, S.Fname,(SQRT(POW(C.latitude - Balt.Blat,2) + POW(C.longitude - Balt.Blon,2))) as md, S.StuID as SCT
+    ->     FROM Student as S, City as C,
+    ->     (
+    ->         SELECT DISTINCT(C.latitude) as Blat, (C.longitude) as Blon
+    ->         FROM City as C
+    ->         WHERE C.city_name = "Baltimore" AND C.state = "MD"
+    ->     ) as Balt
+    ->     WHERE S.city_code = C.city_code
+    -> ) as Stu_cit
+    -> WHERE Stu_cit.SCT = S.StuID AND S.Advisor = F.FacID
+    -> ORDER BY Stu_cit.md DESC
+    -> LIMIT 1; 
++-------+-------+-------+
+| Lname | Fname | StuID |
++-------+-------+-------+
+| Han   | Jun   |  1029 |
++-------+-------+-------+
+1 row in set (0.00 sec)
+
+MySQL [cs41517_etsai7_db]> 
+MySQL [cs41517_etsai7_db]> -- 56. What is the minimum GPA of a student who lives in Maryland, along with that
+MySQL [cs41517_etsai7_db]> --     studen'ts Name, Major, city, and GPA
+MySQL [cs41517_etsai7_db]> -- Working
+MySQL [cs41517_etsai7_db]> SELECT t.SL, t.SF, MIN(t.MajorGPA)
+    -> FROM(
+    ->     SELECT (SUM((C.Credits * GC.gradepoint))/SUM(C.Credits)) as MajorGPA,S.Fname as SF, S.Lname as SL
+    ->     FROM Student as S, Enrolled_in as EI, Course as C, Gradeconversion as GC,
+    ->          City as Ci
+    ->     WHERE S.StuID = EI.StuID 
+    ->         AND S.city_code = Ci.city_code AND Ci.state = "MD"
+    ->         AND EI.CID = C.CID AND EI.Grade = GC.lettergrade 
+    ->         GROUP BY S.Lname 
+    -> ) as t;
++--------+-------+------------------+
+| SL     | SF    | MIN(t.MajorGPA)  |
++--------+-------+------------------+
+| Nelson | Jandy | 2.98823530533734 |
++--------+-------+------------------+
+1 row in set (0.31 sec)
+
+MySQL [cs41517_etsai7_db]> 
+MySQL [cs41517_etsai7_db]> -- 58. List the name and student ID of the student (or students) with the highest GPA
+MySQL [cs41517_etsai7_db]> --     who play Lacrosse more than 16 hours per week.
+MySQL [cs41517_etsai7_db]> -- Working
+MySQL [cs41517_etsai7_db]> SELECT fs.SL as LastName, fs.SF as FirstName, fs.SSI as StudentID, fs.MajorGPA as MaxGPa
+    -> FROM (
+    ->     SELECT (SUM((C.Credits * GC.gradepoint))/SUM(C.Credits)) as MajorGPA,S.Fname as SF, S.Lname as SL, S.StuID as SSI
+    ->     FROM Student as S, Enrolled_in as EI, Course as C, Gradeconversion as GC,
+    ->         SportsInfo as SI
+    ->     WHERE S.StuID = EI.StuID AND S.StuID = SI.StuID AND SI.SportName = "Lacrosse"
+    ->         AND SI.HoursPerWeek > 16  
+    ->         AND EI.CID = C.CID AND EI.Grade = GC.lettergrade 
+    ->         GROUP BY SL 
+    ->     ) as fs
+    ->     HAVING fs.MajorGPA = 
+    ->         (SELECT MAX(t.MajorGPA) as gpa
+    ->             FROM(
+    ->                 SELECT (SUM((C.Credits * GC.gradepoint))/SUM(C.Credits)) as MajorGPA,S.Fname as SF, S.Lname as SL
+    ->                 FROM Student as S, Enrolled_in as EI, Course as C, Gradeconversion as GC,
+    ->                     SportsInfo as SI
+    ->                 WHERE S.StuID = EI.StuID AND S.StuID = SI.StuID AND SI.SportName = "Lacrosse"
+    ->                     AND SI.HoursPerWeek > 16 
+    ->                     AND EI.CID = C.CID AND EI.Grade = GC.lettergrade 
+    ->                 GROUP BY S.Lname 
+    ->                 ) as t
+    ->         );
++----------+-----------+-----------+-----------------+
+| LastName | FirstName | StudentID | MaxGPa          |
++----------+-----------+-----------+-----------------+
+| Lee      | Susan     |      1015 | 3.5071428673608 |
++----------+-----------+-----------+-----------------+
+1 row in set (0.25 sec)
+
+MySQL [cs41517_etsai7_db]> 
+MySQL [cs41517_etsai7_db]> -- 59. List the names of students who either live with someone who plays video games
+MySQL [cs41517_etsai7_db]> --     OR are not members of any club
+MySQL [cs41517_etsai7_db]> -- Working
+MySQL [cs41517_etsai7_db]> SELECT *
+    ->  FROM       ( 
+    ->         SELECT S.StuID as ID1, LI.dormid as Dorm, LI.room_number as Room, S.Lname as LastName, S.Fname as FirstName
+    ->         FROM Student as S, Lives_in as LI
+    ->         WHERE S.stuid IN(SELECT PG.StuID FROM Plays_Games as PG) 
+    ->                 AND S.StuID = LI.StuID 
+    ->         union
+    ->         SELECT S.StuID as S2, LI.dormid as SD2, LI.room_number as SR2, S.Lname as SL, S.Fname as SF
+    ->         FROM Student as S, Lives_in as LI
+    ->         WHERE S.StuID NOT IN(SELECT MoC.StuID FROM Member_of_club as MoC)
+    ->                 AND S.StuID = LI.StuID
+    ->         )  as t,
+    ->         (
+    ->         SELECT S.StuID as ID2, LI.dormid as Dorm, LI.room_number as Room, S.Lname as LastName, S.Fname as FirstName
+    ->         FROM Student as S, Lives_in as LI
+    ->         WHERE S.stuid IN(SELECT PG.StuID FROM Plays_Games as PG) 
+    ->                 AND S.StuID = LI.StuID 
+    ->         union
+    ->         SELECT S.StuID as S2, LI.dormid as SD2, LI.room_number as SR2, S.Lname as SL, S.Fname as SF
+    ->         FROM Student as S, Lives_in as LI
+    ->         WHERE S.StuID NOT IN(SELECT MoC.StuID FROM Member_of_club as MoC)
+    ->                 AND S.StuID = LI.StuID
+    ->         )  as t1
+    ->     WHERE t.Dorm = t1.Dorm AND t.Room = t1.Room AND t.ID1 != t1.ID2 AND t1.ID2 < t.ID1;
++------+------+------+----------+-----------+------+------+------+----------+-----------+
+| ID1  | Dorm | Room | LastName | FirstName | ID2  | Dorm | Room | LastName | FirstName |
++------+------+------+----------+-----------+------+------+------+----------+-----------+
+| 1032 |  109 |  105 | Brown    | Eric      | 1001 |  109 |  105 | Smith    | Linda     |
+| 1015 |  160 |  443 | Lee      | Susan     | 1010 |  160 |  443 | Lee      | Derek     |
+| 1031 |  100 |  112 | Smith    | Sarah     | 1002 |  100 |  112 | Kim      | Tracy     |
+| 1035 |  100 |  124 | Schmidt  | Sarah     | 1003 |  100 |  124 | Jones    | Shiela    |
+| 1012 |  160 |  333 | Davis    | Steven    | 1005 |  160 |  333 | Gompers  | Paul      |
+| 1021 |  160 |  405 | Andreou  | George    | 1020 |  160 |  405 | Thornton | Ian       |
+| 1025 |  160 |  317 | Goldman  | Mark      | 1023 |  160 |  317 | Shieber  | David     |
++------+------+------+----------+-----------+------+------+------+----------+-----------+
+7 rows in set (0.00 sec)
+
+MySQL [cs41517_etsai7_db]> 
+MySQL [cs41517_etsai7_db]> -- 60. List the names of every department and the total number of hours their majors play
+MySQL [cs41517_etsai7_db]> --     video games (you can omit departments where no major plays video games)
+MySQL [cs41517_etsai7_db]> -- Working
+MySQL [cs41517_etsai7_db]> SELECT D.DNO, SUM(PG.Hours_Played)
+    -> FROM Plays_Games as PG, Department as D, Student as S
+    -> WHERE S.StuID = PG.StuID AND S.Major = D.DNO
+    -> GROUP BY D.DNO;
++------+----------------------+
+| DNO  | SUM(PG.Hours_Played) |
++------+----------------------+
+|  550 |                  157 |
+|  600 |                 2488 |
++------+----------------------+
+2 rows in set (0.00 sec)
+
+MySQL [cs41517_etsai7_db]> 
+MySQL [cs41517_etsai7_db]> -- 62. List the names of courses that are taught by faculty who participate in the same
+MySQL [cs41517_etsai7_db]> --     activity as at least one of the students in that course.    
+MySQL [cs41517_etsai7_db]> -- Working
+MySQL [cs41517_etsai7_db]> SELECT DISTINCT(A.activity_name)
+    -> FROM Course as C, Student as S, Faculty as F, Enrolled_in as EI, Participates_in as PI,
+    ->     Activity as A, Faculty_Participates_in as FPI
+    -> WHERE C.CID = EI.CID AND EI.StuID = S.StuID
+    ->         AND C.Instructor = F.FacID
+    ->         AND S.StuID = PI.StuID
+    ->         AND F.FacID = FPI.FacID 
+    ->         AND PI.actid = FPI.actid
+    ->         AND A.actid = FPI.actid;
++-------------------+
+| activity_name     |
++-------------------+
+| Canoeing          |
+| Kayaking          |
+| Baseball          |
+| Football          |
+| Volleyball        |
+| Mountain Climbing |
+| Spelunking        |
+| Crossword Puzzles |
+| Soccer            |
+| Chess             |
++-------------------+
+10 rows in set (0.04 sec)
+
+MySQL [cs41517_etsai7_db]> 
+MySQL [cs41517_etsai7_db]> /*
+   /*> SELECT C.CID, C.CName, S.StuID
+   /*> FROM Course as C, Student as S, Enrolled_in as EI
+   /*> WHERE C.CID = EI.CID AND EI.StuID = S.StuID 
+   /*> GROUP BY C.CID;
+   /*> */
+MySQL [cs41517_etsai7_db]> 
+MySQL [cs41517_etsai7_db]> -- 64. List the average money spent at restaurants by students who only visit "Sandwich"
+MySQL [cs41517_etsai7_db]> --     type restaurants
+MySQL [cs41517_etsai7_db]> -- Working
+MySQL [cs41517_etsai7_db]> SELECT VR.StuID, AVG(VR.Spent)
+    -> FROM Restaurant_Type as RT, Type_Of_Restaurant as ToR, Restaurant as R, Visits_Restaurant as VR
+    -> WHERE RT.ResTypeID = ToR.ResTypeID AND RT.ResTypeName = "Sandwich" AND R.ResID = ToR.ResID
+    ->     AND VR.ResID = R.ResID;
++-------+------------------+
+| StuID | AVG(VR.Spent)    |
++-------+------------------+
+|  1001 | 6.53000020980835 |
++-------+------------------+
+1 row in set (0.00 sec)
+
+MySQL [cs41517_etsai7_db]> 
+MySQL [cs41517_etsai7_db]> -- 65. List names and StuID's of all students who have at least one allergy and have at least
+MySQL [cs41517_etsai7_db]> --     one roommate.
+MySQL [cs41517_etsai7_db]> -- Working
+MySQL [cs41517_etsai7_db]> SELECT DISTINCT(S.Fname) as FN1, S.Lname as LN1, LI1.dormid, LI1.room_number
+    ->     FROM Student as S, Student as S2, Enrolled_in as EI1, Enrolled_in as EI2, Course as C,
+    ->          Lives_in as LI1, Lives_in as LI2
+    ->     WHERE S.StuID = EI1.StuID  AND EI1.CID = C.CID AND S2.StuID = EI2.StuID 
+    ->         AND EI1.CID = EI2.CID  AND (S.Fname != S2.Fname AND S.LName != S2.LName)
+    ->         AND S.StuID = LI1.StuID AND S2.StuID = LI2.StuID
+    ->         AND LI1.room_number = LI2.room_number AND LI1.dormid = LI2.dormid
+    ->         AND S.StuID IN (SELECT StuID FROM Has_Allergy) 
+    ->         AND S2.StuID IN (SELECT StuID FROM Has_Allergy); 
++--------+----------+--------+-------------+
+| FN1    | LN1      | dormid | room_number |
++--------+----------+--------+-------------+
+| Sarah  | Smith    |    100 |         112 |
+| Steven | Davis    |    160 |         333 |
+| Paul   | Gompers  |    160 |         333 |
+| George | Andreou  |    160 |         405 |
+| Ian    | Thornton |    160 |         405 |
+| Tracy  | Kim      |    100 |         112 |
++--------+----------+--------+-------------+
+6 rows in set (0.04 sec)
+
+MySQL [cs41517_etsai7_db]> 
+MySQL [cs41517_etsai7_db]> -- 66. List the name of the dorm with the highest percentage of students who own pets and
+MySQL [cs41517_etsai7_db]> --     what that percentage is
+MySQL [cs41517_etsai7_db]> -- Working
+MySQL [cs41517_etsai7_db]> SELECT fs.TL as DormID, fs.tDN as DormName, fs.pc as Percent
+    -> FROM (
+    ->     SELECT t.LID as TL, t.DN as tDN, (s.cct/t.ct) as pc
+    ->         FROM
+    ->         (
+    ->             SELECT LI.DormID as LID, D.dorm_name as DN, COUNT(LI.StuID) as ct
+    ->             FROM Lives_in as LI, Dorm as D
+    ->             WHERE LI.dormid = D.dormid
+    ->             GROUP BY LI.DormID
+    ->         ) as t, 
+    ->         (
+    ->             SELECT DISTINCT(LI.DormID) as LID, COUNT(HP.StuID) as cct
+    ->             FROM Has_Pet as HP, Lives_in as LI
+    ->             WHERE HP.StuID = LI.StuID
+    ->             GROUP BY LI.DormID
+    ->         ) as s
+    ->         WHERE t.LID = s.LID
+    ->     ) as fs
+    ->     HAVING ABS ((fs.pc) -
+    ->         (SELECT MAX(s.cct/t.ct)
+    ->             FROM
+    ->             (
+    ->                 SELECT LI.DormID as LID, COUNT(LI.StuID) as ct
+    ->                 FROM Lives_in as LI
+    ->                 GROUP BY LI.DormID
+    ->             ) as t, 
+    ->             (
+    ->                 SELECT DISTINCT(LI.DormID) as LID, COUNT(HP.StuID) as cct
+    ->                 FROM Has_Pet as HP, Lives_in as LI
+    ->                 WHERE HP.StuID = LI.StuID
+    ->                 GROUP BY LI.DormID
+    ->             ) as s
+    ->             WHERE t.LID = s.LID
+    ->         )) <=.0001;
++--------+----------------------+---------+
+| DormID | DormName             | Percent |
++--------+----------------------+---------+
+|    109 | Anonymous Donor Hall |  0.3333 |
++--------+----------------------+---------+
+1 row in set (0.00 sec)
+
+MySQL [cs41517_etsai7_db]> 
+MySQL [cs41517_etsai7_db]> -- 67. Be Creative, or something
+MySQL [cs41517_etsai7_db]> --     List all student names and major by name who are not from Baltimore, but own a cat
+MySQL [cs41517_etsai7_db]> SELECT DISTINCT(S.Lname), S.Fname, D.DName
+    -> From Student as S, Department as D, Has_Pet as HP, Pets as P, City as C
+    -> WHERE S.StuID = HP.StuID AND S.Major = D.DNO
+    ->     AND S.city_code = C.city_code AND C.city_name != "Baltimore"
+    ->     AND HP.PetID = P.PetID AND P.PetType = "cat";
+Empty set (0.00 sec)
+
+MySQL [cs41517_etsai7_db]> 
+MySQL [cs41517_etsai7_db]>     -- To show it works, look for only those who live in Baltimore
+MySQL [cs41517_etsai7_db]> SELECT DISTINCT(S.Lname), S.Fname, D.DName
+    -> From Student as S, Department as D, Has_Pet as HP, Pets as P, City as C
+    -> WHERE S.StuID = HP.StuID AND S.Major = D.DNO
+    ->     AND S.city_code = C.city_code AND C.city_name = "Baltimore"
+    ->     AND HP.PetID = P.PetID AND P.PetType = "cat";
++-------+-------+------------------+
+| Lname | Fname | DName            |
++-------+-------+------------------+
+| Smith | Linda | Computer Science |
++-------+-------+------------------+
+1 row in set (0.01 sec)
+
