@@ -10,4 +10,4 @@ Introduction to database management systems and database design, focusing on the
 * [Project 4](https://github.com/etsai7/Databases/tree/master/Homework/Homework4): OmniCorp
 
 ## Resources
-* [Materials] (www.cs.jhu.edu/~yarowsky/cs415.html)
+* [Materials](www.cs.jhu.edu/~yarowsky/cs415.html)
