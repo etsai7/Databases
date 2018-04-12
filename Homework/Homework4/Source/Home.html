@@ -1,0 +1,126 @@
+<html>
+
+  <head>  
+    <link rel="stylesheet" href="/css/animate.css">
+    <link rel="stylesheet" href="/css/style.css">
+  </head>
+  <body style="background-color:#00BCFF;">
+    <br></br>
+    <center><img class="animated fadeInDown" src="https://i.pinimg.com/originals/a5/81/d5/a581d5b97f24c91c7aa89dd6a2e1b9fd.png" alt="Logo" style="width:300px;height:300px;" align="middle"></center> 
+    <h1 class="porter animated fadeInDown" align="center"><font size="40" style="color:#13438e;" align="middle">OMNICORP</font></h1>
+    <br></br>
+    <!-- Show all information for specific ticker-->
+    <h2 class="porter animated fadeInDown">Show All Ticker Information</h2>
+        <form class="porter animated fadeInDown" action="All.php" method="post">
+          <label for="Ticker">Ticker: </label>
+          <input type="text" name="Ticker" id="Ticker">
+          <input type="submit" name="submit" value="submit">          
+        </form>
+
+        <!-- Show all information for specific ticker on a specific day-->
+    <h2 class="porter animated fadeInDown">Find a Ticker on a Specific Date</h2>
+        <form class="porter animated fadeInDown" action="TickerWithDate.php" method="post">
+            Ticker: <input type="text" name="Ticker">
+            Date: <input type="text" name="Date">
+            <input name="submit" type="submit" value="submit">
+        </form>
+
+        <!-- Show all information for specific ticker between a range of days-->
+    <h2 class="porter animated fadeInDown">Find a Ticker on a Specific Date Range</h2>
+        <form class="porter animated fadeInDown" action="TickerWithDateRange.php" method="post">
+            Ticker: <input type="text" name="Ticker">
+            StartDate: <input type="text" name="StartDate">
+            EndDate: <input type="text" name="EndDate">
+            <input name="submit" type="submit" value="submit">
+        </form>
+
+        <!-- Find all Tickers with closing prices greater than entered-->
+    <h2 class="porter animated fadeInDown">Find Tickers with greater or equal Closing Prices</h2>
+        <form class="porter animated fadeInDown" action="GreaterClosePrice.php" method="post">
+            ClosingPrice: <input type="text" name="ClosingPrice">
+            <input name="submit" type="submit" value="submit">
+        </form>
+
+        <!-- Find all Tickers with closing prices Less than entered-->
+    <h2 class="porter animated fadeInDown">Find Tickers with lesser or equal Closing Prices</h2>
+        <form class="porter animated fadeInDown" action="LesserClosePrice.php" method="post">
+            ClosingPrice: <input type="text" name="ClosingPrice">
+            <input name="submit" type="submit" value="submit">
+        </form>
+
+        <!-- Find all Tickers with opening prices Greater than entered-->
+    <h2 class="porter animated fadeInDown">Find Tickers with greater or equal Opening Prices</h2>
+        <form class="porter animated fadeInDown" action="GreaterOpenPrice.php" method="post">
+            OpeningPrice: <input type="text" name="OpeningPrice">
+            <input name="submit" type="submit" value="submit">
+        </form>
+
+        <!-- Find all Tickers with opening prices lesser than entered-->
+    <h2 class="porter animated fadeInDown">Find Tickers with lesser or equal Opening Prices</h2>
+        <form class="porter animated fadeInDown" action="LesserOpenPrice.php" method="post">
+            OpeningPrice: <input type="text" name="OpeningPrice">
+            <input name="submit" type="submit" value="submit">
+        </form>
+
+        <!-- List tickers of specific dates with specific growth percentages-->
+    <h2 class="porter animated fadeInDown">Ticker and Date with Closing Price x% greater than Opening Price</h2>
+        <form class="porter animated fadeInDown" action="PercentGrowth.php" method="post">
+            PercentGrowth: <input type="text" name="PercentGrowth">
+            <input name="submit" type="submit" value="submit">
+        </form>
+        
+<!-- ##################################################################################################################################################################################################################-->
+    <br></br>
+    <h1 class="porter animated fadeInDown" align="center"><font size="8" style="color:#13438e;" align="middle">Company OMNInformation</font></h1>
+    <br></br>
+        
+    <h2 class="porter animated fadeInDown">Location of company</h2>
+        <form class="porter animated fadeInDown" action="Location.php" method="post">
+            Ticker: <input type="text" name="Ticker">
+            <input name="submit" type="submit" value="submit">
+        </form>
+        
+    <h2 class="porter animated fadeInDown">Companies In Same City</h2>
+        <form class="porter animated fadeInDown" action="SameCity.php" method="post">
+            Ticker: <input type="text" name="Ticker">
+            <input name="submit" type="submit" value="submit">
+        </form>
+        
+    <h2 class="porter animated fadeInDown">Companies In Same State</h2>
+        <form class="porter animated fadeInDown" action="SameState.php" method="post">
+            Ticker: <input type="text" name="Ticker">
+            <input name="submit" type="submit" value="submit">
+        </form>
+        
+    <h2 class="porter animated fadeInDown">Companies In Same Country</h2>
+        <form class="porter animated fadeInDown" action="SameCountry.php" method="post">
+            Ticker: <input type="text" name="Ticker">
+            <input name="submit" type="submit" value="submit">
+        </form>
+        
+    <h2 class="porter animated fadeInDown">Employees of Company</h2>
+        <form class="porter animated fadeInDown" action="Employees.php" method="post">
+            Ticker: <input type="text" name="Ticker">
+            <input name="submit" type="submit" value="submit">
+        </form>
+    
+    <h2 class="porter animated fadeInDown">Biggest Employer in State</h2>
+        <form class="porter animated fadeInDown" action="BiggestEmployerInState.php" method="post">
+            State <input type="text" name="State">
+            <input name="submit" type="submit" value="submit">
+        </form>
+        
+        
+    <h2 class="porter animated fadeInDown">Biggest Employer in City</h2>
+        <form class="porter animated fadeInDown" action="BiggestEmployerInCity.php" method="post">
+            City <input type="text" name="City">
+            <input name="submit" type="submit" value="submit">
+        </form>
+        
+    <h2 class="porter animated fadeInDown">Biggest Employer in Country</h2>
+        <form class="porter animated fadeInDown" action="BiggestEmployerInCountry.php" method="post">
+            Country <input type="text" name="Country">
+            <input name="submit" type="submit" value="submit">
+        </form>
+  </body>
+</html>
